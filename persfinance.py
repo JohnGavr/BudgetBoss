@@ -38,3 +38,17 @@ else:
         }
         json.dump(data, json_file)
 
+    try:
+        with open('variables.json', 'r') as json_file:
+            read_data = json.load(json_file)
+    except FileNotFoundError:
+        print("File not found. Run the script to create the file first.")
+
+    # Print read variables
+    if read_data:
+        sql_localhost= read_data["localhost"]
+        sql_user= read_data["user"]
+        sql_password= read_data["password"]
+        sql_database= read_data["database"]
+        print(f"You are going to connect to {sql_user}@{sql_localhost} and your password is {sql_password}\nand the database name is {sql_database}")
+
