@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import json,os
+import mysql.connector
+from datetime import datetime
 
 ### Save Variables as localhost,user,password,database name into a JSON file.
 if os.path.exists('variables.json'):
@@ -16,11 +18,11 @@ if os.path.exists('variables.json'):
 
     # Print read variables
     if read_data:
-        sql_localhost= read_data["localhost"]
+        sql_host= read_data["host"]
         sql_user= read_data["user"]
         sql_password= read_data["password"]
         sql_database= read_data["database"]
-        print(f"You are going to connect to {sql_user}@{sql_localhost} and your password is {sql_password}\nand the database name is {sql_database}")
+        print(f"You are going to connect to {sql_user}@{sql_host} and your password is {sql_password}\nand the database name is {sql_database}")
 
         
 else:
@@ -31,7 +33,7 @@ else:
 
     with open('variables.json', 'w') as json_file:
         data = {
-            "localhost": usr_input1,
+            "host": usr_input1,
             "user": usr_input2,
             "password": usr_input3,
             "database": usr_input4
@@ -46,9 +48,30 @@ else:
 
     # Print read variables
     if read_data:
-        sql_localhost= read_data["localhost"]
+        sql_host= read_data["host"]
         sql_user= read_data["user"]
         sql_password= read_data["password"]
         sql_database= read_data["database"]
-        print(f"You are going to connect to {sql_user}@{sql_localhost} and your password is {sql_password}\nand the database name is {sql_database}")
+        print(f"You are going to connect to {sql_user}@{sql_host} and your password is {sql_password}\nand the database name is {sql_database}")
 
+### Connect to mysql server
+
+def connect_to_mysql(host, user, password, database=None):
+    try:
+        # Establish a connection to the MySQL server
+        connection = mysql.connector.connect(
+            host=host,
+            user=user,
+            password=password,
+            database=database
+        )
+
+        if connection.is_connected():
+            print(f"Connected to MySQL database '{database}'")
+            return connection
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return None
+
+connection= connect_to_mysql(sql_host,sql_user,sql_password)
