@@ -74,4 +74,16 @@ def connect_to_mysql(host, user, password, database=None):
         print(f"Error: {err}")
         return None
 
-connection= connect_to_mysql(sql_host,sql_user,sql_password)
+sql_connect= connect_to_mysql(sql_host,sql_user,sql_password)
+
+sql_cursor= sql_connect.cursor()
+
+# Create Database
+try:
+    sql_cursor.execute(f"CREATE DATABASE {sql_database}")
+    print(f"Database {sql_database}, created successfully!")
+except mysql.connector.Error as err:
+    print(f"Database {sql_database} exists. We continue.")
+
+
+
