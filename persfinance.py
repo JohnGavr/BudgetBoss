@@ -150,4 +150,20 @@ while True:
         break  # Exit the main loop if the user inputs 'exit'
 
 
+### Add SUM statement
 
+rev_query= f"SELECT SUM(value) FROM (finance) WHERE kind=0"
+
+sql_cursor.execute(rev_query)
+
+total_rev= sql_cursor.fetchone()
+
+print(f"Total Revenues are : {total_rev[0]}")
+
+exp_query= f"SELECT SUM(value) FROM (finance) WHERE kind=1"
+
+sql_cursor.execute(exp_query)
+
+total_exp= sql_cursor.fetchone()
+
+print(f"Total Expenses are : {total_exp[0]}")
