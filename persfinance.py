@@ -4,57 +4,9 @@ import json,os
 import mysql.connector
 from datetime import datetime
 
-### Save Variables as localhost,user,password,database name into a JSON file.
-if os.path.exists('variables.json'):
-    print("The file exists")
-    # Read variables from the JSON file
-    read_data = None
+### Functions
 
-    try:
-        with open('variables.json', 'r') as json_file:
-            read_data = json.load(json_file)
-    except FileNotFoundError:
-        print("File not found. Run the script to create the file first.")
-
-    # Print read variables
-    if read_data:
-        sql_host= read_data["host"]
-        sql_user= read_data["user"]
-        sql_password= read_data["password"]
-        sql_database= read_data["database"]
-        print(f"You are going to connect to {sql_user}@{sql_host} and your password is {sql_password}\nand the database name is {sql_database}")
-
-        
-else:
-    usr_input1= input('Enter the host(localhost): ')
-    usr_input2= input('Enter the user of mysql: ')
-    usr_input3= input('Enter the password of user: ')
-    usr_input4= input('Enter the database name you want to create: ')
-
-    with open('variables.json', 'w') as json_file:
-        data = {
-            "host": usr_input1,
-            "user": usr_input2,
-            "password": usr_input3,
-            "database": usr_input4
-        }
-        json.dump(data, json_file)
-
-    try:
-        with open('variables.json', 'r') as json_file:
-            read_data = json.load(json_file)
-    except FileNotFoundError:
-        print("File not found. Run the script to create the file first.")
-
-    # Print read variables
-    if read_data:
-        sql_host= read_data["host"]
-        sql_user= read_data["user"]
-        sql_password= read_data["password"]
-        sql_database= read_data["database"]
-        print(f"You are going to connect to {sql_user}@{sql_host} and your password is {sql_password}\nand the database name is {sql_database}")
-
-### Connect to mysql server
+# Connect To MySQL
 
 def connect_to_mysql(host, user, password, database=None):
     try:
@@ -73,6 +25,104 @@ def connect_to_mysql(host, user, password, database=None):
     except mysql.connector.Error as err:
         print(f"Error: {err}")
         return None
+
+
+
+
+
+
+
+### Add Menu
+
+def display_menu():
+    print("Menu:")
+    print("1. Configuration File")
+    print("2. Add Revenue")
+    print("3. Add Expenses")
+    print("4. Quit")
+
+def configuration_file():
+    print("Configuration File")
+    ### Save Variables as localhost,user,password,database name into a JSON file.
+    if os.path.exists('variables.json'):
+        print("The file exists")
+        # Read variables from the JSON file
+        read_data = None
+
+        try:
+            with open('variables.json', 'r') as json_file:
+                read_data = json.load(json_file)
+        except FileNotFoundError:
+            print("File not found. Run the script to create the file first.")
+
+        # Print read variables
+        if read_data:
+            sql_host= read_data["host"]
+            sql_user= read_data["user"]
+            sql_password= read_data["password"]
+            sql_database= read_data["database"]
+            print(f"You are going to connect to {sql_user}@{sql_host} and your password is {sql_password}\nand the database name is {sql_database}")
+    else:
+        usr_input1= input('Enter the host(localhost): ')
+        usr_input2= input('Enter the user of mysql: ')
+        usr_input3= input('Enter the password of user: ')
+        usr_input4= input('Enter the database name you want to create: ')
+
+        with open('variables.json', 'w') as json_file:
+            data = {
+                "host": usr_input1,
+                "user": usr_input2,
+                "password": usr_input3,
+                "database": usr_input4
+            }
+            json.dump(data, json_file)
+
+        try:
+            with open('variables.json', 'r') as json_file:
+                read_data = json.load(json_file)
+        except FileNotFoundError:
+            print("File not found. Run the script to create the file first.")
+
+        # Print read variables
+        if read_data:
+            sql_host= read_data["host"]
+            sql_user= read_data["user"]
+            sql_password= read_data["password"]
+            sql_database= read_data["database"]
+            print(f"You are going to connect to {sql_user}@{sql_host} and your password is {sql_password}\nand the database name is {sql_database}")
+
+def add_revenue():
+    print("Add Revenue")
+def add_expense():
+    print("Add Expense")
+
+while True:
+    display_menu()
+
+# Get user input
+    choice = input("Enter your choice (1-4): ")
+
+    if choice == '1':
+        configuration_file()
+    elif choice == '2':
+        add_revenue()
+    elif choice == '3':
+        add_expense()
+    elif choice == '4':
+        print("Goodbye!")
+        break
+    else:
+        print("Invalid choice. Please enter a number between 1 and 4.")
+    
+
+
+
+
+
+
+
+
+
 
 sql_connect= connect_to_mysql(sql_host,sql_user,sql_password)
 
