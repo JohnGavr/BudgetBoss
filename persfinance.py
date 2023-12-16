@@ -4,6 +4,30 @@ import json,os
 import mysql.connector
 from datetime import datetime
 
+### Connect to mysql server
+def connect_to_mysql(host, user, password, database=None):
+    try:
+        # Establish a connection to the MySQL server
+        connection = mysql.connector.connect(
+            host=host,
+            user=user,
+            password=password,
+            database=database
+        )
+
+        if connection.is_connected():
+            print(f"Connected to MySQL database '{database}'")
+            return connection
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return None
+    
+def insert_statement(table,decimal,day):
+    sql = f"INSERT INTO `{table}` (`value`, `date`) VALUES ({decimal}, '{day}')"
+    return sql
+    
+
 ### Save Variables as localhost,user,password,database name into a JSON file.
 if os.path.exists('variables.json'):
     print("The file exists")
@@ -54,29 +78,11 @@ else:
         sql_database= read_data["database"]
         print(f"You are going to connect to {sql_user}@{sql_host} and your password is {sql_password}\nand the database name is {sql_database}")
 
-### Connect to mysql server
 
-def connect_to_mysql(host, user, password, database=None):
-    try:
-        # Establish a connection to the MySQL server
-        connection = mysql.connector.connect(
-            host=host,
-            user=user,
-            password=password,
-            database=database
-        )
-
-        if connection.is_connected():
-            print(f"Connected to MySQL database '{database}'")
-            return connection
-
-    except mysql.connector.Error as err:
-        print(f"Error: {err}")
-        return None
-
+## Connect to SQL to create databases        
 sql_connect= connect_to_mysql(sql_host,sql_user,sql_password)
-
 sql_cursor= sql_connect.cursor()
+
 
 # Create Database
 try:
@@ -85,63 +91,47 @@ try:
 except mysql.connector.Error as err:
     print(f"Database {sql_database} exists. We continue.")
 
+##Close Connection
 sql_connect.close()
 sql_cursor.close()
 
-### Create Table
-
+### Create Tables
+## Connect to SQL Database
 sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database)
 sql_cursor= sql_connect.cursor()
 
 try:
-    sql_cursor.execute("CREATE TABLE finance (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(255), date DATE, kind BOOLEAN)")
-    print("Database finance, created succesfully!")
+    sql_cursor.execute("CREATE TABLE revenue (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(255), date DATE)")
+    sql_cursor.execute("CREATE TABLE expense (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(255), date DATE)")
+    print("Database revenue and expense, created succesfully!")
 except mysql.connector.Error as err:
     print(f"The table exist, we continue.")
 
-# Ask user for Expense or Revenue
 
-def get_valid_input():
-    while True:
-        user_input = input("For Revenue press 0 and for expense press 1. Enter 0 or 1: ")
-        if user_input in ['0', '1']:
-            return int(user_input)
-        else:
-            print("Invalid input. Please enter either 0 or 1.")
 
 while True:
-
-    user_choice = get_valid_input()
-
-# Insert Date
-
+    # Insert Date
     date_input_str = input("Enter a date (YYYY-MM-DD): ")
-
-# Convert the string to a datetime object
+    # Convert the string to a datetime object
     try:
         date_input = datetime.strptime(date_input_str, "%Y-%m-%d")
     except ValueError:
         print("Invalid date format. Please use the format YYYY-MM-DD.")
-
-
-# Insert Decimal number
-
+    # Insert Decimal number
+    
     user_input = input("Please enter a decimal number: ")
-
+    
     try:
         decimal_number=float(user_input)
         print(f"You entered: {decimal_number}")
     except ValueError:
-    # Handle the case where the user didn't enter a valid decimal number
+        # Handle the case where the user didn't enter a valid decimal number
         print("Invalid input. Please enter a valid decimal number.")
+    
+    sql = insert_statement("revenue",decimal_number,date_input_str)
+    #val = (decimal_number, date_input_str)
 
-
-
-
-    sql = "INSERT INTO finance (value, kind, date) VALUES (%s, %s, %s)"
-    val = (decimal_number, user_choice, date_input_str)
-
-    sql_cursor.execute(sql,val)
+    sql_cursor.execute(sql)
 
     sql_connect.commit()
 
@@ -152,7 +142,7 @@ while True:
 
 ### Add SUM statement
 
-rev_query= f"SELECT SUM(value) FROM (finance) WHERE kind=0"
+rev_query= f"SELECT SUM(value) FROM (revenue)"
 
 sql_cursor.execute(rev_query)
 
@@ -160,7 +150,7 @@ total_rev= sql_cursor.fetchone()
 
 print(f"Total Revenues are : {total_rev[0]}")
 
-exp_query= f"SELECT SUM(value) FROM (finance) WHERE kind=1"
+exp_query= f"SELECT SUM(value) FROM (expense)"
 
 sql_cursor.execute(exp_query)
 
