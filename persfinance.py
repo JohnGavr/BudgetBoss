@@ -5,7 +5,7 @@ import mysql.connector
 from datetime import datetime
 
 ### Connect to mysql server
-def connect_to_mysql(host, user, password, database=None):
+def connect_to_mysql(host, user, password, database=None, print_messages=True):
     try:
         # Establish a connection to the MySQL server
         connection = mysql.connector.connect(
@@ -15,9 +15,9 @@ def connect_to_mysql(host, user, password, database=None):
             database=database
         )
 
-        if connection.is_connected():
+        if connection.is_connected() and print_messages:
             print(f"Connected to MySQL database '{database}'")
-            return connection
+        return connection
 
     except mysql.connector.Error as err:
         print(f"Error: {err}")
@@ -33,7 +33,14 @@ def display_menu():
     print("Menu:")
     print("1. Add Revenue")
     print("2. Add Expense")
-    print("3. Quit")
+    print("3. Reports")
+    print("4. Quit")
+
+def submenu():
+    print("1. Total Revenues")
+    print("2. Total Expenses")
+    print("3. PnL")
+    print("4. Back to Main Menu")
 
 def configuration_file():
     print("Configuration File")
@@ -62,7 +69,7 @@ def kind_number():
         print("Invalid input. Please enter a valid decimal number.")
     
 def add_revenue():
-    sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database)
+    sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
     sql_cursor= sql_connect.cursor()
     print("Add Revenue")
     date_input_str= kind_date()
@@ -74,7 +81,7 @@ def add_revenue():
     sql_cursor.close()
 
 def add_expense():
-    sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database)
+    sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
     sql_cursor= sql_connect.cursor()
     print("Add Expense")
     date_input_str=kind_date()
@@ -84,6 +91,32 @@ def add_expense():
     sql_connect.commit()
     sql_connect.close()
     sql_cursor.close()
+
+def sum_reports(table,tag):
+    sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
+    sql_cursor= sql_connect.cursor()
+    ### Add SUM statement
+    rev_query= f"SELECT SUM(value) FROM {table}"
+    sql_cursor.execute(rev_query)
+    total_rev= sql_cursor.fetchone()
+
+    if tag is not None:
+        print(f"Total {tag} are : {total_rev[0]}")
+
+    exp_query= f"SELECT SUM(value) FROM (database)"
+    #sql_cursor.execute(exp_query)
+    #total_exp= sql_cursor.fetchone()
+    #print(f"Total Expenses are : {total_exp[0]}")
+    sql_connect.close()
+    sql_cursor.close()
+    return total_rev[0]
+
+def pnl():
+    total_revs= sum_reports('revenue',None)
+    total_exps= sum_reports('expense',None)
+    total_pnl= total_revs - total_exps
+    print(f"Total Profit and loss; {total_pnl}")
+    
 
 ### Save Variables as localhost,user,password,database name into a JSON file.
 if os.path.exists('variables.json'):
@@ -170,41 +203,22 @@ while True:
     elif choice == '2':
         add_expense()
     elif choice == '3':
+        submenu_choice = None
+        while submenu_choice != '4':
+            submenu()
+            submenu_choice = input("Enter your submenu choice: ")
+            if submenu_choice == '1':
+                sum_reports('revenue','Revenues')
+            elif submenu_choice == '2':
+                sum_reports('expense', 'Expenses')
+            elif submenu_choice == '3':
+                pnl()
+            elif submenu_choice =='4':
+                print("Returning to main menu")
+            else:
+                print("Invalid choice. Please try again")
+    elif choice == '4':    
         print("Goodbye!")
         break
     else:
         print("Invalid choice. Please enter a number between 1 and 3.")
-
-
-
-
-    
-#    sql = insert_statement("revenue",decimal_number,date_input_str)
-#    #val = (decimal_number, date_input_str)
-
- #   sql_cursor.execute(sql)
-
-  #  sql_connect.commit()
-
-   # exit_command = input("Enter 'exit' to stop or any other key to continue: ")
-    #if exit_command.lower() == 'exit':
-     #   break  # Exit the main loop if the user inputs 'exit'
-
-
-### Add SUM statement
-
-rev_query= f"SELECT SUM(value) FROM (revenue)"
-
-sql_cursor.execute(rev_query)
-
-total_rev= sql_cursor.fetchone()
-
-print(f"Total Revenues are : {total_rev[0]}")
-
-exp_query= f"SELECT SUM(value) FROM (expense)"
-
-sql_cursor.execute(exp_query)
-
-total_exp= sql_cursor.fetchone()
-
-print(f"Total Expenses are : {total_exp[0]}")
