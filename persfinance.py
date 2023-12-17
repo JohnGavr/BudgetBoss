@@ -187,8 +187,8 @@ sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database)
 sql_cursor= sql_connect.cursor()
 
 try:
-    sql_cursor.execute("CREATE TABLE revenue (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(255), date DATE)")
-    sql_cursor.execute("CREATE TABLE expense (id INT AUTO_INCREMENT PRIMARY KEY, value VARCHAR(255), date DATE)")
+    sql_cursor.execute("CREATE TABLE revenue (id INT AUTO_INCREMENT PRIMARY KEY, value DECIMAL(10. 2), date DATE)")
+    sql_cursor.execute("CREATE TABLE expense (id INT AUTO_INCREMENT PRIMARY KEY, value DECIMAL(10, 2), date DATE)")
     print("Database revenue and expense, created succesfully!")
 except mysql.connector.Error as err:
     print(f"The table exist, we continue.")
@@ -196,7 +196,7 @@ except mysql.connector.Error as err:
 while True:
     display_menu()
     # Get user input
-    choice = input("Enter your choice (1-3): ")
+    choice = input("Enter your choice (1-4): ")
 
     if choice == '1':
         add_revenue()
