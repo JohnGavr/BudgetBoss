@@ -3,6 +3,10 @@
 import json,os
 import mysql.connector
 from datetime import datetime
+from prettytable import PrettyTable
+
+revenue_categories = ["Salary", "Others"]
+expense_categories = ["Going Out", "Vehicles & Gas", "Shopping", "SuperMarket", "Other"]
 
 ### Connect to mysql server
 def connect_to_mysql(host, user, password, database=None, print_messages=True):
@@ -23,9 +27,9 @@ def connect_to_mysql(host, user, password, database=None, print_messages=True):
         print(f"Error: {err}")
         return None
     
-def insert_statement(table,decimal,day):
-    sql = f"INSERT INTO `{table}` (`value`, `date`) VALUES ({decimal}, '{day}')"
-    return sql
+def insert_statement(table,day_input, value_input, category_input, comments_input):
+    statement = f"INSERT INTO `{table}` (`date`, `value`, `category`, `comments`) VALUES ('{day_input}', '{value_input}', '{category_input}', '{comments_input}')"
+    return statement
     
 ### Add Menu
 
@@ -49,44 +53,71 @@ def configuration_file():
 def kind_date():
     while True:
         # Insert Date
-        date_input_str = input("Enter a date (YYYY-MM-DD): ")
+        date_input = input("Enter a date (DD-MM-YYYY): ")
         # Convert the string to a datetime object
         try:
-            date_input = datetime.strptime(date_input_str, "%Y-%m-%d")
+            date_input = datetime.strptime(date_input, "%d-%m-%Y")
+            formatted_date= date_input.strftime('%Y-%m-%d')
+            return date_input
+            break
         except ValueError:
-            print("Invalid date format. Please use the format YYYY-MM-DD.")
-        return date_input_str
+            print("Invalid date format. Please enter the date in DD-MM-YYYY format.")
         
-def kind_number():        
+        
+def kind_value():        
     # Insert Decimal number
-    user_input = input("Please enter a decimal number: ")
+    decimal_input = input("Please enter a decimal number: ")
     try:
-        decimal_number=float(user_input)
-        print(f"You entered: {decimal_number}")
-        return decimal_number
+        value_input=float(decimal_input)
+        print(f"You entered: {value_input}")
+        return value_input
     except ValueError:
         # Handle the case where the user didn't enter a valid decimal number
         print("Invalid input. Please enter a valid decimal number.")
+
+def kind_category(category_options):
+    while True:
+        try:
+            print("Category Options:")
+            for i, category in enumerate(category_options, start=1):
+                print(f"{i}. {category}")
+                
+            category_input= int(input("Enter the category number: "))
+            if 1 <= category_input <= len(category_options):
+                return category_input
+            else:
+                print("Invalid input. Please enter a valid category number.")
+        except ValueError:
+            print("Invalid input. Please enter a valid integer.")
+
+def kind_comments():
+    comments_input = input("Enter comments: ")
+    return comments_input
+    
     
 def add_revenue():
     sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
     sql_cursor= sql_connect.cursor()
     print("Add Revenue")
-    date_input_str= kind_date()
-    decimal_number = kind_number()
-    sql = insert_statement("revenue",decimal_number,date_input_str)
+    date_input= kind_date()
+    value_input = kind_value()
+    category_input = kind_category(revenue_categories)
+    comments_input = kind_comments()
+    sql = insert_statement("revenue",date_input,value_input, category_input, comments_input)
     sql_cursor.execute(sql)
     sql_connect.commit()
     sql_connect.close()
     sql_cursor.close()
 
 def add_expense():
-    sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
-    sql_cursor= sql_connect.cursor()
+    sql_connect = connect_to_mysql(sql_host, sql_user, sql_password, sql_database, print_messages=False)
+    sql_cursor = sql_connect.cursor()
     print("Add Expense")
-    date_input_str=kind_date()
-    decimal_number=kind_number()
-    sql = insert_statement("expense",decimal_number,date_input_str)
+    date_input = kind_date()
+    value_input = kind_value()
+    category_input = kind_category(expense_categories)
+    comments_input = kind_comments()
+    sql = insert_statement("expense", date_input, value_input, category_input, comments_input)
     sql_cursor.execute(sql)
     sql_connect.commit()
     sql_connect.close()
@@ -114,9 +145,29 @@ def sum_reports(table,tag):
 def pnl():
     total_revs= sum_reports('revenue',None)
     total_exps= sum_reports('expense',None)
+    if total_revs is None:
+        total_revs=0
+    elif total_exps is None:
+        total_exps=0
     total_pnl= total_revs - total_exps
-    print(f"Total Profit and loss; {total_pnl}")
-    
+    print(f"Total Profit and loss: {total_pnl}")
+
+def execute_select_all(table_name):
+    sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
+    sql_cursor= sql_connect.cursor()
+     # Execute the SELECT query
+    query = f"SELECT * FROM {table_name}"
+    sql_cursor.execute(query)
+    # Fetch all rows
+    rows = sql_cursor.fetchall()
+    table = PrettyTable()
+    columns= [desc[0] for desc in sql_cursor.description]
+    table.field_names = columns
+    for row in rows:
+        table.add_row(row)
+    print(table)
+    sql_connect.close()
+    sql_cursor.close()
 
 ### Save Variables as localhost,user,password,database name into a JSON file.
 if os.path.exists('variables.json'):
@@ -187,8 +238,12 @@ sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database)
 sql_cursor= sql_connect.cursor()
 
 try:
-    sql_cursor.execute("CREATE TABLE revenue (id INT AUTO_INCREMENT PRIMARY KEY, value DECIMAL(10. 2), date DATE)")
-    sql_cursor.execute("CREATE TABLE expense (id INT AUTO_INCREMENT PRIMARY KEY, value DECIMAL(10, 2), date DATE)")
+    # Category Options: 1. Salary 2. Others
+    sql_cursor.execute("CREATE TABLE revenue (date DATE, value DECIMAL(10, 2), category INT CHECK (category BETWEEN 1 AND 2), comments VARCHAR(255))")
+    
+    # Category Options: 1. Going Out 2. Vehicles & Gas 3. Shopping 4. SuperMarket 5. Other
+    sql_cursor.execute("CREATE TABLE expense (date DATE, value DECIMAL(10, 2), category INT CHECK (category BETWEEN 1 AND 5), comments VARCHAR(255))")
+    
     print("Database revenue and expense, created succesfully!")
 except mysql.connector.Error as err:
     print(f"The table exist, we continue.")
@@ -209,8 +264,10 @@ while True:
             submenu_choice = input("Enter your submenu choice: ")
             if submenu_choice == '1':
                 sum_reports('revenue','Revenues')
+                execute_select_all('revenue')
             elif submenu_choice == '2':
                 sum_reports('expense', 'Expenses')
+                execute_select_all('expense')
             elif submenu_choice == '3':
                 pnl()
             elif submenu_choice =='4':
