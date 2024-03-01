@@ -2,11 +2,11 @@
 
 import json,os
 import mysql.connector
-from datetime import datetime
+from datetime import datetime,date
 from prettytable import PrettyTable
 
 revenue_categories = ["Salary", "Others"]
-expense_categories = ["Going Out", "Vehicles & Gas", "Shopping", "SuperMarket", "Other"]
+expense_categories = ["Going Out", "Smoking", "Vehicles & Gas", "Shopping", "SuperMarket", "Other"]
 
 ### Connect to mysql server
 def connect_to_mysql(host, user, password, database=None, print_messages=True):
@@ -16,7 +16,7 @@ def connect_to_mysql(host, user, password, database=None, print_messages=True):
             host=host,
             user=user,
             password=password,
-            database=database
+            database=database,
         )
 
         if connection.is_connected() and print_messages:
@@ -50,11 +50,18 @@ def configuration_file():
     print("Configuration File")
     ### Save Variables as localhost,user,password,database name into a JSON file.
 
-def kind_date():
+def kind_date(report):
     while True:
         # Insert Date
-        date_input = input("Enter a date (DD-MM-YYYY): ")
+        if report == 0 :
+            date_input = input("Enter a date (DD-MM-YYYY): ")
+        elif report == 1 :
+            date_input = input("Enter a date from (DD-MM-YYYY): ")
+        elif report == 2 :
+            date_input = input("Enter a date to (DD-MM-YYYY):")
         # Convert the string to a datetime object
+        if report == 2 and not date_input:
+            date_input = date.today().strftime("%d-%m-%Y")
         try:
             date_input = datetime.strptime(date_input, "%d-%m-%Y")
             formatted_date= date_input.strftime('%Y-%m-%d')
@@ -62,18 +69,19 @@ def kind_date():
             break
         except ValueError:
             print("Invalid date format. Please enter the date in DD-MM-YYYY format.")
-        
-        
-def kind_value():        
-    # Insert Decimal number
-    decimal_input = input("Please enter a decimal number: ")
-    try:
-        value_input=float(decimal_input)
-        print(f"You entered: {value_input}")
-        return value_input
-    except ValueError:
-        # Handle the case where the user didn't enter a valid decimal number
-        print("Invalid input. Please enter a valid decimal number.")
+
+               
+def kind_value():
+    while True:
+        # Insert Decimal number
+        decimal_input = input("Please enter a decimal number: ")
+        try:
+            value_input=float(decimal_input)
+            print(f"You entered: {value_input}")
+            return value_input
+        except ValueError:
+            # Handle the case where the user didn't enter a valid decimal number
+            print("Invalid input. Please enter a valid decimal number.")
 
 def kind_category(category_options):
     while True:
@@ -99,7 +107,7 @@ def add_revenue():
     sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
     sql_cursor= sql_connect.cursor()
     print("Add Revenue")
-    date_input= kind_date()
+    date_input= kind_date(0)
     value_input = kind_value()
     category_input = kind_category(revenue_categories)
     comments_input = kind_comments()
@@ -113,7 +121,7 @@ def add_expense():
     sql_connect = connect_to_mysql(sql_host, sql_user, sql_password, sql_database, print_messages=False)
     sql_cursor = sql_connect.cursor()
     print("Add Expense")
-    date_input = kind_date()
+    date_input = kind_date(0)
     value_input = kind_value()
     category_input = kind_category(expense_categories)
     comments_input = kind_comments()
@@ -123,11 +131,11 @@ def add_expense():
     sql_connect.close()
     sql_cursor.close()
 
-def sum_reports(table,tag):
+def sum_reports(table,tag,date_from,date_to):
     sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
     sql_cursor= sql_connect.cursor()
     ### Add SUM statement
-    rev_query= f"SELECT SUM(value) FROM {table}"
+    rev_query= f"SELECT SUM(value) FROM {table} WHERE date >= '{date_from}' and date <='{date_to}'"
     sql_cursor.execute(rev_query)
     total_rev= sql_cursor.fetchone()
 
@@ -143,8 +151,10 @@ def sum_reports(table,tag):
     return total_rev[0]
 
 def pnl():
-    total_revs= sum_reports('revenue',None)
-    total_exps= sum_reports('expense',None)
+    date_from=kind_date(1)
+    date_to=kind_date(2)
+    total_revs= sum_reports('revenue',None,date_from,date_to)
+    total_exps= sum_reports('expense',None,date_from,date_to)
     if total_revs is None:
         total_revs=0
     elif total_exps is None:
@@ -155,8 +165,10 @@ def pnl():
 def execute_select_all(table_name):
     sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
     sql_cursor= sql_connect.cursor()
+    date_from=kind_date(1)
+    date_to=kind_date(2)
      # Execute the SELECT query
-    query = f"SELECT * FROM {table_name}"
+    query = f"SELECT * FROM {table_name} WHERE date >= '{date_from}' and date <='{date_to}' UNION ALL SELECT 'Total', SUM(value),'','' FROM {table_name} WHERE date >= '{date_from}' and date <='{date_to}' ORDER BY date"
     sql_cursor.execute(query)
     # Fetch all rows
     rows = sql_cursor.fetchall()
@@ -263,10 +275,8 @@ while True:
             submenu()
             submenu_choice = input("Enter your submenu choice: ")
             if submenu_choice == '1':
-                sum_reports('revenue','Revenues')
                 execute_select_all('revenue')
             elif submenu_choice == '2':
-                sum_reports('expense', 'Expenses')
                 execute_select_all('expense')
             elif submenu_choice == '3':
                 pnl()
