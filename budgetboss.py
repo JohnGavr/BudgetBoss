@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
-import json,os
-import mysql.connector
+import json
+import os
 from datetime import datetime,date
+
+import mysql.connector
 from prettytable import PrettyTable
 
 revenue_categories = ["Salary", "Others"]
@@ -10,6 +12,7 @@ expense_categories = ["Going Out", "Smoking", "Vehicles & Gas", "Shopping", "Sup
 
 ### Connect to mysql server
 def connect_to_mysql(host, user, password, database=None, print_messages=True):
+    '''Function for connecting to mysql'''
     try:
         # Establish a connection to the MySQL server
         connection = mysql.connector.connect(
@@ -22,18 +25,19 @@ def connect_to_mysql(host, user, password, database=None, print_messages=True):
         if connection.is_connected() and print_messages:
             print(f"Connected to MySQL database '{database}'")
         return connection
-
-    except mysql.connector.Error as err:
-        print(f"Error: {err}")
+    except mysql.connector.Error as mistake:
+        print(f"Error: {mistake}")
         return None
     
 def insert_statement(table,day_input, value_input, category_input, comments_input):
+    ''' Function for Insert Statement'''
     statement = f"INSERT INTO `{table}` (`date`, `value`, `category`, `comments`) VALUES ('{day_input}', '{value_input}', '{category_input}', '{comments_input}')"
     return statement
     
 ### Add Menu
 
 def display_menu():
+    ''' Basic Menu'''
     print("Menu:")
     print("1. Add Revenue")
     print("2. Add Expense")
@@ -41,16 +45,19 @@ def display_menu():
     print("4. Quit")
 
 def submenu():
+    ''' Second Menu'''
     print("1. Total Revenues")
     print("2. Total Expenses")
     print("3. PnL")
     print("4. Back to Main Menu")
 
 def configuration_file():
+    ''' Function for user to see the configuration file and manage it'''
     print("Configuration File")
     ### Save Variables as localhost,user,password,database name into a JSON file.
 
 def kind_date(report):
+    '''Date of the transaction'''
     while True:
         # Insert Date
         if report == 0 :
@@ -72,6 +79,7 @@ def kind_date(report):
 
                
 def kind_value():
+    ''' Value of transaction'''
     while True:
         # Insert Decimal number
         decimal_input = input("Please enter a decimal number: ")
@@ -84,6 +92,7 @@ def kind_value():
             print("Invalid input. Please enter a valid decimal number.")
 
 def kind_category(category_options):
+    '''Category of transaction'''
     while True:
         try:
             print("Category Options:")
@@ -99,11 +108,13 @@ def kind_category(category_options):
             print("Invalid input. Please enter a valid integer.")
 
 def kind_comments():
+    ''' Comments of transacion'''
     comments_input = input("Enter comments: ")
     return comments_input
     
     
 def add_revenue():
+    ''' Function which take insert statement for revenue'''
     sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
     sql_cursor= sql_connect.cursor()
     print("Add Revenue")
@@ -118,6 +129,7 @@ def add_revenue():
     sql_cursor.close()
 
 def add_expense():
+    ''' Function which take insert statement for expense '''
     sql_connect = connect_to_mysql(sql_host, sql_user, sql_password, sql_database, print_messages=False)
     sql_cursor = sql_connect.cursor()
     print("Add Expense")
@@ -132,6 +144,7 @@ def add_expense():
     sql_cursor.close()
 
 def sum_reports(table,tag,date_from,date_to):
+    ''' Reports function'''
     sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
     sql_cursor= sql_connect.cursor()
     ### Add SUM statement
@@ -151,6 +164,7 @@ def sum_reports(table,tag,date_from,date_to):
     return total_rev[0]
 
 def pnl():
+    ''' Reports function'''
     date_from=kind_date(1)
     date_to=kind_date(2)
     total_revs= sum_reports('revenue',None,date_from,date_to)
@@ -163,6 +177,7 @@ def pnl():
     print(f"Total Profit and loss: {total_pnl}")
 
 def execute_select_all(table_name):
+    ''' Reports function'''
     sql_connect= connect_to_mysql(sql_host,sql_user,sql_password,sql_database,print_messages=False)
     sql_cursor= sql_connect.cursor()
     date_from=kind_date(1)
@@ -185,20 +200,20 @@ def execute_select_all(table_name):
 if os.path.exists('variables.json'):
     print("The file exists")
     # Read variables from the JSON file
-    read_data = None
+    loaded_data = None
 
     try:
-        with open('variables.json', 'r') as json_file:
-            read_data = json.load(json_file)
+        with open('variables.json', 'r', encoding='utf-8') as json_file:
+            loaded_data = json.load(json_file)
     except FileNotFoundError:
         print("File not found. Run the script to create the file first.")
 
     # Print read variables
-    if read_data:
-        sql_host= read_data["host"]
-        sql_user= read_data["user"]
-        sql_password= read_data["password"]
-        sql_database= read_data["database"]
+    if loaded_data:
+        sql_host= loaded_data["host"]
+        sql_user= loaded_data["user"]
+        sql_password= loaded_data["password"]
+        sql_database= loaded_data["database"]
         print(f"You are going to connect to {sql_user}@{sql_host} and your password is {sql_password}\nand the database name is {sql_database}")
 else:
     usr_input1= input('Enter the host(localhost): ')
@@ -206,7 +221,7 @@ else:
     usr_input3= input('Enter the password of user: ')
     usr_input4= input('Enter the database name you want to create: ')
 
-    with open('variables.json', 'w') as json_file:
+    with open('variables.json', 'w', encoding='utf-8') as json_file:
         data = {
             "host": usr_input1,
             "user": usr_input2,
@@ -216,17 +231,17 @@ else:
         json.dump(data, json_file)
 
     try:
-        with open('variables.json', 'r') as json_file:
-            read_data = json.load(json_file)
+        with open('variables.json', 'r', encoding='utf-8') as json_file:
+            loaded_data = json.load(json_file)
     except FileNotFoundError:
         print("File not found. Run the script to create the file first.")
 
     # Print read variables
-    if read_data:
-        sql_host= read_data["host"]
-        sql_user= read_data["user"]
-        sql_password= read_data["password"]
-        sql_database= read_data["database"]
+    if loaded_data:
+        sql_host= loaded_data["host"]
+        sql_user= loaded_data["user"]
+        sql_password= loaded_data["password"]
+        sql_database= loaded_data["database"]
         print(f"You are going to connect to {sql_user}@{sql_host} and your password is {sql_password}\nand the database name is {sql_database}")
 
 ## Connect to SQL to create databases        
